@@ -15,6 +15,9 @@ const User = require('../../models/User');
 router.get('/', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(400).json( {errors: [{msg: 'User was deleted'}] });
+        }
         res.json(user);
     } catch (err) {
         console.error(err.message);
@@ -28,7 +31,7 @@ router.get('/', auth, async (req, res) => {
 router.post('/', [
     check('email', 'Please include a valid email')
         .isEmail(),
-    check('password', 'Please is requited').exists()
+    check('password', 'Please enter password').exists()
 
 ], async (req, res) => {
     const errors = validationResult(req);
