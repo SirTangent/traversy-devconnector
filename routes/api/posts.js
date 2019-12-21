@@ -14,7 +14,7 @@ const ERR_NOTFOUND = 'Post not found or is private';
 // @desc    Create a post
 // @access  Private
 router.post('/', [auth, [
-    check('text', 'Comment text is required')
+    check('text', 'Post text is required')
         .not()
         .isEmpty()
 ]], async (req, res) => {
@@ -32,8 +32,6 @@ router.post('/', [auth, [
             avatar: user.avatar,
             user: req.user.id
         });
-
-        console.log(typeof req.body.ispublic);
 
         if (typeof req.body.ispublic == 'boolean' && !req.body.ispublic) newPost.ispublic = false;
 
@@ -164,6 +162,87 @@ router.put('/unlike/:id', auth, async (req,res) => {
         }
 
         res.json(post.likes);
+    } catch (err) {
+        if(err.kind == 'ObjectId') {
+            return res.status(404).json( {errors: [{msg: ERR_NOTFOUND}] });
+        }
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   POST api/posts/comment/:id
+// @desc    Comment on a post
+// @access  Private
+router.post('/comment/:id', [auth, [
+    check('text', 'Comment text is required')
+        .not()
+        .isEmpty()
+]], async (req, res) => {
+    const errors = validationResult(req);
+    if(!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
+        const user = await User.findById(req.user.id).select('-password');
+        const post = await Post.findById(req.params.id);
+
+        // Check if post exists or is public
+        if(!post.ispublic){
+            return res.status(404).json( {errors: [{msg: ERR_NOTFOUND}] })
+        }
+
+        const newComment = {
+            text: req.body.text,
+            name: user.name,
+            avatar: user.avatar,
+            user: req.user.id
+        };
+
+        post.comments.unshift(newComment);
+
+        await post.save();
+
+        res.json(post.comments);
+    } catch (err) {
+        if(err.kind == 'ObjectId') {
+            return res.status(404).json( {errors: [{msg: ERR_NOTFOUND}] });
+        }
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   DELETE api/posts/comment/:id/:comment_id
+// @desc    Delete comment
+// @access  Private
+router.delete('/comment/:id/:comment_id', auth, async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.id);
+
+        // Pull out comment
+        const removeIndex = post.comments.findIndex(comment => comment.id == req.params.comment_id);
+        const comment = post.comments[removeIndex];
+
+        // Make sure comment exists
+        if(!comment) {
+            return res.status(404).json({ msg: 'Comment does not exist' })
+        }
+
+        // Check user
+        if(comment.user.toString() != req.user.id) {
+            return res.status(401).json({ msg: 'User not authorized' })
+        }
+
+        // Get remove index
+        if(removeIndex >= 0) {
+            post.comments.splice(removeIndex, 1);
+            await post.save();
+        }
+
+        res.json({ msg: 'Comment deleted' });
+
     } catch (err) {
         if(err.kind == 'ObjectId') {
             return res.status(404).json( {errors: [{msg: ERR_NOTFOUND}] });
