@@ -46,5 +46,11 @@ const postSchema = new Schema({
     date: {
         type: Date,
         default: Date.now()
+    },
+    ispublic: {
+        type: Boolean,
+        default: true
     }
 });
+
+module.exports = Post = mongoose.model('post', postSchema);
