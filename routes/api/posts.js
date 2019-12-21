@@ -45,13 +45,36 @@ router.post('/', [auth, [
 });
 
 // @route   GET api/posts
-// @desc    Get all posts
+// @desc    Get all public posts
 // @access  Private
 router.get('/', auth, async (req,res) => {
     try {
         const posts = await Post.find({ ispublic: true }).sort({ date: -1 });
         res.json(posts);
     } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   GET api/posts/:id
+// @desc    Get a public post by ID
+// @access  Private
+router.get('/:id', auth, async (req,res) => {
+    const ERR_NOTFOUND = 'Post not found or is private';
+
+    try {
+        const post = await Post.findById(req.params.id);
+
+        if(!post.ispublic){
+            return res.status(404).json( {errors: [{msg: ERR_NOTFOUND}] })
+        }
+
+        res.json(post);
+    } catch (err) {
+        if(err.kind == 'ObjectId') {
+            return res.status(400).json( {errors: [{msg: ERR_NOTFOUND}] });
+        }
         console.error(err.message);
         res.status(500).send('Server Error');
     }
