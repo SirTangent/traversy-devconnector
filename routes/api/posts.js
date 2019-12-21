@@ -8,6 +8,8 @@ const Post = require('../../models/Post');
 const Profile = require('../../models/Profile');
 const User = require('../../models/User');
 
+const ERR_NOTFOUND = 'Post not found or is private';
+
 // @route   POST api/posts
 // @desc    Create a post
 // @access  Private
@@ -61,8 +63,6 @@ router.get('/', auth, async (req,res) => {
 // @desc    Get a public post by ID
 // @access  Private
 router.get('/:id', auth, async (req,res) => {
-    const ERR_NOTFOUND = 'Post not found or is private';
-
     try {
         const post = await Post.findById(req.params.id);
 
@@ -103,6 +103,70 @@ router.delete('/:id', auth, async (req,res) => {
     } catch (err) {
         if(err.kind == 'ObjectId') {
             return res.status(404).json( {errors: [{msg: 'Post not found'}] });
+        }
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   PUT api/posts/like/:id
+// @desc    Like a post
+// @access  Private
+router.put('/like/:id', auth, async (req,res) => {
+    try {
+        const post = await Post.findById(req.params.id);
+
+        // Check if post exists or is public
+        if(!post.ispublic){
+            return res.status(404).json( {errors: [{msg: ERR_NOTFOUND}] })
+        }
+
+        // Check if the post has already been liked
+        if(post.likes.filter((like) => like.user.toString() == req.user.id).length > 0) {
+            return res.status(400).json({ msg: 'Post already liked' })
+        }
+
+        post.likes.unshift({ user: req.user.id });
+
+        await post.save();
+
+        res.json(post.likes);
+    } catch (err) {
+        if(err.kind == 'ObjectId') {
+            return res.status(404).json( {errors: [{msg: ERR_NOTFOUND}] });
+        }
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   PUT api/posts/unlike/:id
+// @desc    Unlike a post
+// @access  Private
+router.put('/unlike/:id', auth, async (req,res) => {
+    try {
+        const post = await Post.findById(req.params.id);
+
+        // Check if post exists or is public
+        if(!post.ispublic){
+            return res.status(404).json( {errors: [{msg: ERR_NOTFOUND}] })
+        }
+
+        // Check if the post has not been liked
+        if(post.likes.filter((like) => like.user.toString() == req.user.id).length == 0) {
+            return res.status(400).json({ msg: 'Post was never liked' })
+        }
+
+        const removeIndex = post.likes.map(like => like.user.toString()).indexOf(req.user.id);
+        if(removeIndex >= 0) {
+            post.likes.splice(removeIndex, 1);
+            await post.save();
+        }
+
+        res.json(post.likes);
+    } catch (err) {
+        if(err.kind == 'ObjectId') {
+            return res.status(404).json( {errors: [{msg: ERR_NOTFOUND}] });
         }
         console.error(err.message);
         res.status(500).send('Server Error');
