@@ -10,6 +10,7 @@ const Dashboard = ({ getCurrentProfile, auth: {user}, profile: {profile, loading
         getCurrentProfile();
     }, []);
 
+    // TODO: Fix "profile not created" message from popping up when loading profile
     return loading && profile === null ? <Spinner/> : <Fragment>
         <h1 className="large text-primary">Dashboard</h1>
         <p className="lead">
