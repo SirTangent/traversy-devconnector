@@ -14,10 +14,10 @@ import { logout } from '../../actions/auth';
                  <Link to="/dashboard">Dashboard</Link>
              </li>
              <li>
-                 <a onClick={logout} href='#'>
+                 <Link onClick={logout} to='/login'>
                      <i className="fas fa-sign-out-alt"></i>{' '}
                      <span className="hide-sm">Logout</span>
-                 </a>
+                 </Link>
              </li>
          </ul>
      );

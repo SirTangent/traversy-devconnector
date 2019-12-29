@@ -11,7 +11,7 @@ import {deleteAccount, getCurrentProfile} from '../../actions/profile';
 const Dashboard = ({ getCurrentProfile, deleteAccount, auth: {user}, profile: {profile, loading} }) => {
     useEffect(() => {
         getCurrentProfile();
-    }, []);
+    }, [getCurrentProfile]);
 
     // TODO: Fix "profile not created" message from popping up when loading profile
     return loading && profile === null ? <Spinner/> : <Fragment>
