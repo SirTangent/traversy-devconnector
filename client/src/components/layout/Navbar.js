@@ -11,6 +11,9 @@ import { logout } from '../../actions/auth';
                  <Link to="/profiles">Developers</Link>
              </li>
              <li>
+                 <Link to="/posts">Posts</Link>
+             </li>
+             <li>
                  <Link to="/dashboard">Dashboard</Link>
              </li>
              <li>
