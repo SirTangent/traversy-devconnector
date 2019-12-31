@@ -66,8 +66,8 @@ router.post('/', [
 
         jwt.sign(
             payload,
-            config.get('jwtSecret'),
-            { expiresIn: config.get('jwtTokenTimeout') },
+            process.env.JWT_SECRET || config.get('jwtSecret'),
+            { expiresIn: process.env.JWT_TIMEOUT || config.get('jwtTokenTimeout') },
             (err, token) => {
                 if (err) throw err;
                 res.json({ token });
